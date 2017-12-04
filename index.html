@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Проверка чека</title>
+</head>
+<body>
+    <form method="GET">
+        <input type="text" name="code" value="{{.Code}}">
+        <button>Поиск</button>
+    </form>
+    <table>
+        {{range .Items}}
+            <tr>
+                <td>{{.Name}} x{{.Quantity}}</td>
+                <td>{{.Sum}}</td>
+            </tr>
+        {{end}}
+    </table>
+</body>
+</html>

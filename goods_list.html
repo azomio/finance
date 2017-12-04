@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Список покупок</title>
+</head>
+<body>
+    <table>
+        {{range .Goods}}
+            <tr>
+                <td>{{.Id}}</td>
+                <td>{{.Descr}}</td>
+                <td>{{.Price}}</td>
+                <td>{{.Time}}</td>
+            </tr>
+        {{end}}
+    </table>
+</body>
+</html>
