@@ -194,6 +194,8 @@ func check_receipt(input string) ReceiptResp {
     resp, err := client.Do(req)
     defer resp.Body.Close()
     body, err := ioutil.ReadAll(resp.Body)
+    log.Print("before")
+    log.Print(body)
     var parsed ReceiptResp
     if (err != nil) {
         fmt.Printf("Error: %s", err);
