@@ -1,7 +1,7 @@
 package main
 
 import (
-    "text/template"
+    "html/template"
     "fmt"
     "net/http"
     "net/url"
@@ -27,6 +27,12 @@ type Item struct {
     Price int `json:"price"`
 }
 
+type Receipt struct {
+	Id string
+	Sum int
+	AddTime string
+}
+
 type GoodsItem struct {
     Id int
     Descr string
@@ -50,15 +56,44 @@ type GoodsPage struct {
     Goods []GoodsItem
 }
 
-func main() {
+type ReceiptsPage struct {
+    Receipts []Receipt
+}
 
-    http.HandleFunc("/add", addReceiptHandler)
-    http.HandleFunc("/", goodsListHandler)
+func main() {
+	fmt.Println("Started")
+
+    http.HandleFunc("/", mainPageHandler)
+    http.HandleFunc("/get", addReceiptHandler)
+    http.HandleFunc("/goods", goodsListHandler)
     err := http.ListenAndServe(":9090", nil)
     if err != nil {
         log.Fatal("ListenAndServe: ", err);
     }
 
+}
+
+// t=20170926T2012&s=507.00&fn=8710000100993415&i=7269&fp=3426724739&n=1
+func mainPageHandler (w http.ResponseWriter, r *http.Request) {
+	var receipts []Receipt
+	receipts = append(receipts,
+		Receipt{
+			Id: "t=2",
+			Sum: 507,
+			AddTime: "20170926T2012",
+		},
+		Receipt{
+			Id: "t=1",
+			Sum: 5027,
+			AddTime: "20170926T2012",
+		},
+	)
+
+	t, err := template.ParseFiles("tmpl/receipts.html")
+    checkErr(err)
+
+    page := ReceiptsPage{receipts}
+    t.Execute(w, page)
 }
 
 func goodsListHandler (w http.ResponseWriter, r *http.Request) {
@@ -81,7 +116,7 @@ func goodsListHandler (w http.ResponseWriter, r *http.Request) {
 
     rows.Close() //good habit to close
 
-    t, err := template.ParseFiles("goods_list.html")
+    t, err := template.ParseFiles("tmpl/goods_list.html")
     checkErr(err)
 
     page := GoodsPage{goods}
@@ -93,7 +128,7 @@ func addReceiptHandler (w http.ResponseWriter, r *http.Request) {
     r.ParseForm()
     fmt.Println(r.Form)
 
-    t, err := template.ParseFiles("index.html")
+    t, err := template.ParseFiles("tmpl/index.html")
     checkErr(err)
 
     var data ReceiptResp
