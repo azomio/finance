@@ -29,7 +29,7 @@ type Item struct {
 
 type Receipt struct {
 	Id string
-	Sum int
+	Sum string
 	AddTime string
 }
 
@@ -75,19 +75,29 @@ func main() {
 
 // t=20170926T2012&s=507.00&fn=8710000100993415&i=7269&fp=3426724739&n=1
 func mainPageHandler (w http.ResponseWriter, r *http.Request) {
+
+	db, err := sql.Open("sqlite3", "./foo.db")
+    checkErr(err)
+
+    rows, err := db.Query("SELECT * FROM receipt")
+    checkErr(err)
+
+    var fn string
+    var i string
+    var fp string
+    var s string
+    var rt string
+
 	var receipts []Receipt
-	receipts = append(receipts,
-		Receipt{
-			Id: "t=2",
-			Sum: 507,
-			AddTime: "20170926T2012",
-		},
-		Receipt{
-			Id: "t=1",
-			Sum: 5027,
-			AddTime: "20170926T2012",
-		},
-	)
+    for rows.Next() {
+    	err = rows.Scan(&fn, &i, &fp, &s, &rt)
+		receipts = append(receipts, Receipt{
+			Id: fn,
+			Sum: s,
+			AddTime: rt,
+		})
+    }
+    rows.Close()
 
 	t, err := template.ParseFiles("tmpl/receipts.html")
     checkErr(err)
