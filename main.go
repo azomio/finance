@@ -28,6 +28,9 @@ type Item struct {
 }
 
 type Receipt struct {
+	Fp string
+	I string
+	Fn string
 	Id string
 	Sum string
 	AddTime string

@@ -8,6 +8,14 @@
         <input type="text" name="code" value="{{.Code}}">
         <button>Поиск</button>
     </form>
+
+    <form method="GET">
+        <label>ФН: <input type="text" name="fn"></label>
+        <label>ФД: <input type="text" name="i"></label>
+        <label>ФП: <input type="text" name="fp"></label>
+        <button>Поиск</button>
+    </form>
+
     <table>
         {{range .Items}}
             <tr>
