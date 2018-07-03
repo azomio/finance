@@ -66,6 +66,7 @@ type ReceiptsPage struct {
 func main() {
 	fmt.Println("Started")
 
+	http.HandleFunc("/receipt/add", receiptAdd)
     http.HandleFunc("/", mainPageHandler)
     http.HandleFunc("/get", addReceiptHandler)
     http.HandleFunc("/goods", goodsListHandler)
@@ -74,6 +75,23 @@ func main() {
         log.Fatal("ListenAndServe: ", err);
     }
 
+}
+
+func receiptAdd (w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		r.ParseForm()
+    	fn := r.Form["fn"][0]
+    	fp := r.Form["fp"][0]
+    	i := r.Form["i"][0]
+
+   		db, err := sql.Open("sqlite3", "./foo.db")
+        checkErr(err)
+
+		stmt, err := db.Prepare("INSERT INTO receipt(fn, fp, i) values(?,?,?)")
+		checkErr(err)
+		_, err = stmt.Exec(fn, fp, i)
+		checkErr(err)
+	}
 }
 
 // t=20170926T2012&s=507.00&fn=8710000100993415&i=7269&fp=3426724739&n=1
