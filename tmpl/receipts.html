@@ -11,8 +11,8 @@
   </head>
   <body>
     <h1>Receipt list</h1>
-    	<form method="POST">
-    		<input type="text" name="receipt">
+    	<form method="POST" action="receipt/add">
+    		<label>query: <input type="text" name="query"></label>
     		<button>Добавить</button>
     	</form>
 
@@ -25,18 +25,31 @@
 		<table class="pure-table">
 		    <thead>
 		        <tr>
-		            <th>id</th>
-		            <th>summ</th>
-		            <th>time</th>
+		            <th>fn</th>
+		            <th>fp</th>
+		            <th>i</th>
+		            <th>s</th>
+		            <th>t</th>
+		            <th></th>
 		        </tr>
 		    </thead>
 
 		    <tbody>
 	            {{range .Receipts}}
 	                <tr>
-	                    <td>{{.Id}}</td>
+	                    <td>{{.Fn}}</td>
+	                    <td>{{.Fp}}</td>
+	                    <td>{{.I}}</td>
 	                    <td>{{.Sum}}</td>
 	                    <td>{{.AddTime}}</td>
+	                    <td>
+	                    	<form method="POST" action="receipt/delete">
+	                    		<input type="hidden" name="fn" value="{{.Fn}}">
+	                    		<input type="hidden" name="fp" value="{{.Fp}}">
+	                    		<input type="hidden" name="i" value="{{.I}}">
+	                    		<button>x</button>
+	                    	</form>
+	                    </td>
 	                </tr>
 	            {{end}}
 		    </tbody>

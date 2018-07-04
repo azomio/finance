@@ -31,7 +31,6 @@ type Receipt struct {
 	Fp string
 	I string
 	Fn string
-	Id string
 	Sum string
 	AddTime string
 }
@@ -67,6 +66,7 @@ func main() {
 	fmt.Println("Started")
 
 	http.HandleFunc("/receipt/add", receiptAdd)
+	http.HandleFunc("/receipt/delete", receiptDelete)
     http.HandleFunc("/", mainPageHandler)
     http.HandleFunc("/get", addReceiptHandler)
     http.HandleFunc("/goods", goodsListHandler)
@@ -77,7 +77,7 @@ func main() {
 
 }
 
-func receiptAdd (w http.ResponseWriter, r *http.Request) {
+func receiptDelete (w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		r.ParseForm()
     	fn := r.Form["fn"][0]
@@ -87,11 +87,44 @@ func receiptAdd (w http.ResponseWriter, r *http.Request) {
    		db, err := sql.Open("sqlite3", "./foo.db")
         checkErr(err)
 
-		stmt, err := db.Prepare("INSERT INTO receipt(fn, fp, i) values(?,?,?)")
+		stmt, err := db.Prepare("DELETE FROM receipt WHERE fn = ? AND fp = ? AND i = ?")
 		checkErr(err)
 		_, err = stmt.Exec(fn, fp, i)
 		checkErr(err)
 	}
+}
+
+func receiptAdd (w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		return
+	}
+
+	r.ParseForm()
+
+	var fn, fp, i string
+
+	if len(r.Form["query"][0]) != 0 {
+		query := r.Form["query"][0]
+		data, err := url.ParseQuery(query)
+		fmt.Println(data, err)
+		fn = data["fn"][0]
+		fp = data["fp"][0]
+		i = data["i"][0]
+	} else {
+		fn = r.Form["fn"][0]
+		fp = r.Form["fp"][0]
+		i = r.Form["i"][0]
+	}
+
+
+	db, err := sql.Open("sqlite3", "./foo.db")
+    checkErr(err)
+
+	stmt, err := db.Prepare("INSERT INTO receipt(fn, fp, i) values(?,?,?)")
+	checkErr(err)
+	_, err = stmt.Exec(fn, fp, i)
+	checkErr(err)
 }
 
 // t=20170926T2012&s=507.00&fn=8710000100993415&i=7269&fp=3426724739&n=1
@@ -113,7 +146,9 @@ func mainPageHandler (w http.ResponseWriter, r *http.Request) {
     for rows.Next() {
     	err = rows.Scan(&fn, &i, &fp, &s, &rt)
 		receipts = append(receipts, Receipt{
-			Id: fn,
+			Fn: fn,
+			Fp: fp,
+			I: i,
 			Sum: s,
 			AddTime: rt,
 		})
