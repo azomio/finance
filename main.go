@@ -91,6 +91,8 @@ func receiptDelete (w http.ResponseWriter, r *http.Request) {
 		checkErr(err)
 		_, err = stmt.Exec(fn, fp, i)
 		checkErr(err)
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 
@@ -104,7 +106,7 @@ func receiptAdd (w http.ResponseWriter, r *http.Request) {
 
 	var fn, fp, i string
 
-	if len(r.Form["query"][0]) != 0 {
+	if query, ok := r.Form["query"]; ok && len(query[0]) != 0 {
 		query := r.Form["query"][0]
 		data, err := url.ParseQuery(query)
 		fmt.Println(data, err)
@@ -123,8 +125,13 @@ func receiptAdd (w http.ResponseWriter, r *http.Request) {
 
 	stmt, err := db.Prepare("INSERT INTO receipt(fn, fp, i) values(?,?,?)")
 	checkErr(err)
+
 	_, err = stmt.Exec(fn, fp, i)
-	checkErr(err)
+	fmt.Println(err)
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	return
 }
 
 // t=20170926T2012&s=507.00&fn=8710000100993415&i=7269&fp=3426724739&n=1
