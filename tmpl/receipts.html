@@ -30,6 +30,7 @@
 		            <th>i</th>
 		            <th>s</th>
 		            <th>t</th>
+		            <th>data</th>
 		            <th></th>
 		        </tr>
 		    </thead>
@@ -42,12 +43,20 @@
 	                    <td>{{.I}}</td>
 	                    <td>{{.Sum}}</td>
 	                    <td>{{.AddTime}}</td>
+	                    <td></td>
 	                    <td>
 	                    	<form method="POST" action="receipt/delete">
 	                    		<input type="hidden" name="fn" value="{{.Fn}}">
 	                    		<input type="hidden" name="fp" value="{{.Fp}}">
 	                    		<input type="hidden" name="i" value="{{.I}}">
 	                    		<button>x</button>
+	                    	</form>
+
+	                    	<form method="POST" action="receipt/fetch">
+	                    		<input type="hidden" name="fn" value="{{.Fn}}">
+	                    		<input type="hidden" name="fp" value="{{.Fp}}">
+	                    		<input type="hidden" name="i" value="{{.I}}">
+	                    		<button>fetch</button>
 	                    	</form>
 	                    </td>
 	                </tr>

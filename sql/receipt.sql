@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS receipt (
 	i text,
 	fp text,
 	sum text,
+	data text,
 	time integer
 );
 CREATE UNIQUE INDEX IF NOT EXISTS receipt_ind ON receipt (fn,i,fp);

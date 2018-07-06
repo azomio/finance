@@ -32,7 +32,7 @@ type Receipt struct {
 	I string
 	Fn string
 	Sum string
-	AddTime string
+	AddTime int
 }
 
 type GoodsItem struct {
@@ -67,6 +67,7 @@ func main() {
 
 	http.HandleFunc("/receipt/add", receiptAdd)
 	http.HandleFunc("/receipt/delete", receiptDelete)
+	http.HandleFunc("/receipt/fetch", receiptFetch)
     http.HandleFunc("/", mainPageHandler)
     http.HandleFunc("/get", addReceiptHandler)
     http.HandleFunc("/goods", goodsListHandler)
@@ -75,6 +76,23 @@ func main() {
         log.Fatal("ListenAndServe: ", err);
     }
 
+}
+
+func receiptFetch (w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		r.ParseForm()
+
+		fetchData := make(map[string]string)
+	    fetchData["fn"] = r.Form["fn"][0]
+	    fetchData["fp"] = r.Form["fp"][0]
+	    fetchData["i"] = r.Form["i"][0]
+
+   		// db, err := sql.Open("sqlite3", "./foo.db")
+     //    checkErr(err)
+
+	    parsed := fetchReceipt(fetchData)
+	    fmt.Println(parsed)
+	}
 }
 
 func receiptDelete (w http.ResponseWriter, r *http.Request) {
@@ -146,18 +164,19 @@ func mainPageHandler (w http.ResponseWriter, r *http.Request) {
     var fn string
     var i string
     var fp string
-    var s string
-    var rt string
+    var sum string
+    var data string
+    var addTime int
 
 	var receipts []Receipt
     for rows.Next() {
-    	err = rows.Scan(&fn, &i, &fp, &s, &rt)
+    	err = rows.Scan(&fn, &i, &fp, &sum, &data, &addTime)
 		receipts = append(receipts, Receipt{
 			Fn: fn,
 			Fp: fp,
 			I: i,
-			Sum: s,
-			AddTime: rt,
+			Sum: sum,
+			AddTime: addTime,
 		})
     }
     rows.Close()
@@ -231,29 +250,11 @@ func checkErr(err error) {
     }
 }
 
-func check_receipt(input string) ReceiptResp {
+func fetchReceipt(data map[string]string) ReceiptResp {
 
-    client := &http.Client{}
+	client := &http.Client{}
 
-    data, err := url.ParseQuery(input)
-    if err != nil {
-        fmt.Println(err)
-        return ReceiptResp{}
-    }
-    fn := data["fn"]
-    if len(fn) == 0 {
-        return ReceiptResp{}
-    }
-    fp := data["fp"]
-    if len(fp) == 0 {
-        return ReceiptResp{}
-    }
-    i := data["i"]
-    if len(i) == 0 {
-        return ReceiptResp{}
-    }
-
-    url := "http://proverkacheka.nalog.ru:8888/v1/inns/*/kkts/*/fss/" + fn[0] + "/tickets/" + i[0] + "?fiscalSign=" + fp[0] + "&sendToEmail=no"
+    url := "http://proverkacheka.nalog.ru:8888/v1/inns/*/kkts/*/fss/" + data["fn"] + "/tickets/" + data["i"] + "?fiscalSign=" + data["fp"] + "&sendToEmail=no"
     fmt.Println(url)
     req, _ := http.NewRequest("GET", url, nil)
     req.Header.Set("Authorization", "Basic Kzc5MTU0NTQ1MDExOjE1NDg4NQ==")
@@ -270,5 +271,37 @@ func check_receipt(input string) ReceiptResp {
     } else {
         _ = json.Unmarshal(body, &parsed)
     }
+
+    return parsed
+}
+
+func check_receipt(input string) ReceiptResp {
+
+    data, err := url.ParseQuery(input)
+    if err != nil {
+        fmt.Println(err)
+        return ReceiptResp{}
+    }
+
+	fn := data["fn"]
+    if len(fn) == 0 {
+        return ReceiptResp{}
+    }
+    fp := data["fp"]
+    if len(fp) == 0 {
+        return ReceiptResp{}
+    }
+    i := data["i"]
+    if len(i) == 0 {
+        return ReceiptResp{}
+    }
+
+    fetchData := make(map[string]string)
+    fetchData["fn"] = data["fn"][0]
+    fetchData["fp"] = data["fp"][0]
+    fetchData["i"] = data["i"][0]
+
+    parsed := fetchReceipt(fetchData)
+ 
     return parsed
 }
