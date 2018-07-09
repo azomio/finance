@@ -32,6 +32,7 @@ type Receipt struct {
 	I string
 	Fn string
 	Sum string
+	Data string
 	AddTime int
 }
 
@@ -65,9 +66,9 @@ type ReceiptsPage struct {
 func main() {
 	fmt.Println("Started")
 
-	http.HandleFunc("/receipt/add", receiptAdd)
-	http.HandleFunc("/receipt/delete", receiptDelete)
-	http.HandleFunc("/receipt/fetch", receiptFetch)
+	http.HandleFunc("/receipt/add", receiptAddHandler)
+	http.HandleFunc("/receipt/delete", receiptDeleteHandler)
+	http.HandleFunc("/receipt/fetch", receiptFetchHandler)
     http.HandleFunc("/", mainPageHandler)
     http.HandleFunc("/get", addReceiptHandler)
     http.HandleFunc("/goods", goodsListHandler)
@@ -78,7 +79,7 @@ func main() {
 
 }
 
-func receiptFetch (w http.ResponseWriter, r *http.Request) {
+func receiptFetchHandler (w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		r.ParseForm()
 
@@ -87,15 +88,23 @@ func receiptFetch (w http.ResponseWriter, r *http.Request) {
 	    fetchData["fp"] = r.Form["fp"][0]
 	    fetchData["i"] = r.Form["i"][0]
 
-   		// db, err := sql.Open("sqlite3", "./foo.db")
-     //    checkErr(err)
+   		db, err := sql.Open("sqlite3", "./foo.db")
+        checkErr(err)
 
-	    parsed := fetchReceipt(fetchData)
-	    fmt.Println(parsed)
+	    receiptJSON := fetchReceipt(fetchData)
+
+		stmt, err := db.Prepare("UPDATE receipt SET data = ? WHERE fn = ? AND fp = ? AND i = ?")
+		checkErr(err)
+		_, err = stmt.Exec(receiptJSON, fetchData["fn"], fetchData["fp"], fetchData["i"])
+		checkErr(err)
+
+	    var parsed ReceiptResp
+        _ = json.Unmarshal(receiptJSON, &parsed)
+
 	}
 }
 
-func receiptDelete (w http.ResponseWriter, r *http.Request) {
+func receiptDeleteHandler (w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		r.ParseForm()
     	fn := r.Form["fn"][0]
@@ -114,7 +123,7 @@ func receiptDelete (w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func receiptAdd (w http.ResponseWriter, r *http.Request) {
+func receiptAddHandler (w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		return
@@ -158,28 +167,37 @@ func mainPageHandler (w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("sqlite3", "./foo.db")
     checkErr(err)
 
-    rows, err := db.Query("SELECT * FROM receipt")
+    rows, err := db.Query("SELECT fn, i, fp, sum, data, time FROM receipt")
     checkErr(err)
 
     var fn string
     var i string
     var fp string
-    var sum string
-    var data string
-    var addTime int
+    var sum []byte
+    var data []byte
+    var addTime sql.NullInt64
 
 	var receipts []Receipt
     for rows.Next() {
     	err = rows.Scan(&fn, &i, &fp, &sum, &data, &addTime)
-		receipts = append(receipts, Receipt{
+    	checkErr(err)
+    	fmt.Println("data",data)
+		current := Receipt{
 			Fn: fn,
 			Fp: fp,
 			I: i,
-			Sum: sum,
-			AddTime: addTime,
-		})
+			Sum: string(sum[:]),
+			Data: string(data[:]),
+		}
+		if addTime.Valid {
+			current.AddTime = int(addTime.Int64)
+		}
+
+		receipts = append(receipts, current)
     }
     rows.Close()
+
+    fmt.Println(receipts)
 
 	t, err := template.ParseFiles("tmpl/receipts.html")
     checkErr(err)
@@ -250,7 +268,7 @@ func checkErr(err error) {
     }
 }
 
-func fetchReceipt(data map[string]string) ReceiptResp {
+func fetchReceipt(data map[string]string) []byte {
 
 	client := &http.Client{}
 
@@ -261,18 +279,12 @@ func fetchReceipt(data map[string]string) ReceiptResp {
     req.Header.Set("Device-Id", "7a41e33b11e458c")
     req.Header.Set("Device-OS", "Android 6.0")
     resp, err := client.Do(req)
+    checkErr(err)
     defer resp.Body.Close()
     body, err := ioutil.ReadAll(resp.Body)
-    log.Print("before")
-    log.Print(body)
-    var parsed ReceiptResp
-    if (err != nil) {
-        fmt.Printf("Error: %s", err);
-    } else {
-        _ = json.Unmarshal(body, &parsed)
-    }
+    log.Print(string(body[:]))
 
-    return parsed
+    return body
 }
 
 func check_receipt(input string) ReceiptResp {
@@ -301,7 +313,9 @@ func check_receipt(input string) ReceiptResp {
     fetchData["fp"] = data["fp"][0]
     fetchData["i"] = data["i"][0]
 
-    parsed := fetchReceipt(fetchData)
- 
+    receiptJSON := fetchReceipt(fetchData)
+    var parsed ReceiptResp
+    _ = json.Unmarshal(receiptJSON, &parsed)
+
     return parsed
 }
