@@ -6,6 +6,7 @@ import (
     "net/http"
     "net/url"
     "log"
+    "time"
     "io/ioutil"
     "encoding/json"
     "database/sql"
@@ -16,6 +17,8 @@ type ReceiptResp struct {
     Document struct {
         Receipt struct {
             Items []Item `json:"items"`
+            DateTime string `json:"dateTime"`
+            Total int `json:"totalSum"`
         } `json:"receipt"`
     } `json:"document"`
 }
@@ -93,13 +96,21 @@ func receiptFetchHandler (w http.ResponseWriter, r *http.Request) {
 
 	    receiptJSON := fetchReceipt(fetchData)
 
-		stmt, err := db.Prepare("UPDATE receipt SET data = ? WHERE fn = ? AND fp = ? AND i = ?")
+	    var parsed ReceiptResp
+        err = json.Unmarshal(receiptJSON, &parsed)
+        checkErr(err)
+
+        var t time.Time
+        loc, _ := time.LoadLocation("Europe/Moscow")
+        t, err = time.ParseInLocation("2006-01-02T15:04:05", parsed.Document.Receipt.DateTime, loc)
+        fmt.Println("time", t)
+
+		stmt, err := db.Prepare("UPDATE receipt SET data = ?, time =? WHERE fn = ? AND fp = ? AND i = ?")
 		checkErr(err)
-		_, err = stmt.Exec(receiptJSON, fetchData["fn"], fetchData["fp"], fetchData["i"])
+		_, err = stmt.Exec(receiptJSON, t.Unix(), fetchData["fn"], fetchData["fp"], fetchData["i"])
 		checkErr(err)
 
-	    var parsed ReceiptResp
-        _ = json.Unmarshal(receiptJSON, &parsed)
+
 
 	}
 }
