@@ -26,7 +26,7 @@ type ReceiptResp struct {
 type Item struct {
     Sum int `json:"sum"`
     Name string `json:"name"`
-    Quantity int `json:"quantity"`
+    Quantity float64 `json:"quantity"`
     Price int `json:"price"`
 }
 
@@ -36,7 +36,7 @@ type Receipt struct {
 	Fn string
 	Sum string
 	Data string
-	AddTime int
+	AddTime string
 }
 
 type GoodsItem struct {
@@ -49,7 +49,7 @@ type GoodsItem struct {
 type ItemView struct {
     Sum float64
     Name string
-    Quantity int
+    Quantity float64
     Price int
 }
 
@@ -178,7 +178,7 @@ func mainPageHandler (w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("sqlite3", "./foo.db")
     checkErr(err)
 
-    rows, err := db.Query("SELECT fn, i, fp, sum, data, time FROM receipt")
+    rows, err := db.Query("SELECT fn, i, fp, sum, data, time FROM receipt ORDER BY time DESC")
     checkErr(err)
 
     var fn string
@@ -201,7 +201,7 @@ func mainPageHandler (w http.ResponseWriter, r *http.Request) {
 			Data: string(data[:]),
 		}
 		if addTime.Valid {
-			current.AddTime = int(addTime.Int64)
+			current.AddTime = time.Unix(int64(addTime.Int64), 0).Format("2006-01-02 15:04:05")
 		}
 
 		receipts = append(receipts, current)
