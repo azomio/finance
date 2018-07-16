@@ -37,6 +37,7 @@ type Receipt struct {
 	Sum string
 	Data string
 	AddTime string
+	Items []Item
 }
 
 type GoodsItem struct {
@@ -204,11 +205,15 @@ func mainPageHandler (w http.ResponseWriter, r *http.Request) {
 			current.AddTime = time.Unix(int64(addTime.Int64), 0).Format("2006-01-02 15:04:05")
 		}
 
+		var parsed ReceiptResp
+        err = json.Unmarshal(data[:], &parsed)
+        checkErr(err)
+		current.Items = parsed.Document.Receipt.Items
+
+
 		receipts = append(receipts, current)
     }
     rows.Close()
-
-    fmt.Println(receipts)
 
 	t, err := template.ParseFiles("tmpl/receipts.html")
     checkErr(err)
